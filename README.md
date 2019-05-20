@@ -1,3 +1,8 @@
+# Sudoku SAT
+
+Please fork this repository and add your own solver implementation accordingly.
+You can run the sample benchmark with the following provided guide.
+
 ## Benchmarking with [reprobench](https://github.com/rkkautsar/reprobench)
 
 ### Installation
@@ -25,10 +30,10 @@ It is also possible to add more than one solver to the benchmark, for example to
 ### Running the benchmark
 
 ```sh
-(env) $ reprobench server &
+(env) $ reprobench server &             # run the server in background
 (env) $ reprobench bootstrap
 (env) $ reprobench manage local run
-(env) $ fg
+(env) $ fg                              # bring the server back to foreground
 # Stop the server (Ctrl + C)
 ^C
 ```
