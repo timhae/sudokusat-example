@@ -39,4 +39,8 @@ class MySudokuSolver(ExecutableTool):
         """This checks if your solver is ready.
         If it returns false, the `setup()` method is executed
         """
+
+        # TODO: maybe check if your solver has already been compiled
+        #       by checking the target executable?
+
         return Path(cls.path).is_file()
