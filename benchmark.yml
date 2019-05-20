@@ -1,0 +1,54 @@
+title: sudoku-sat
+description: Sudoku SAT
+
+steps:
+  run:
+    - module: reprobench.executors.PsmonExecutor
+    - module: sudoku.validate.SudokuValidator
+      config:
+        check_consistency: true
+  analysis:
+    - module: reprobench.statistics.tables.RunSummaryTable
+      config:
+        output: statistics/summary.csv
+
+observers:
+  - module: reprobench.executors.RunStatisticObserver
+  - module: sudoku.validate.SudokuObserver
+
+tasks:
+  sudoku:
+    type: doi
+    doi: 10.5072/zenodo.261834 # https://sandbox.zenodo.org/record/261834
+    path: ./tasks/sudoku/zenodo
+    extract_archives: true
+    patterns: |
+      sudoku/*.txt
+      !**/*.zip
+
+# You can tune the limits
+
+limits:
+  time: 90 # s
+  memory: 2048 # mb
+
+# You will probably want to change the solver configuration below
+
+tools:
+  team1:
+    # The module refers to the class MySolver in `my_solver/__init__.py`.
+    # Change accordingly if the directory is renamed.
+    module: my_solver.MySolver
+    parameters:
+      riss:
+        solver: riss
+      glucose:
+        solver: glucose
+  # # Uncomment and modify to add more solvers
+  # alternative_implementation:
+  #   module: my_solver.AnotherImplementation # or other_solver.Solver, etc.
+  #   parameters:
+  #     riss:
+  #       solver: riss
+  #     glucose:
+  #       solver: glucose
