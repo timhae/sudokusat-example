@@ -1,7 +1,7 @@
 # Sudoku SAT
 
 Please fork this repository and add your own solver implementation accordingly.
-You can run the sample benchmark with the following provided guide.
+You can run the sample benchmark with the following instruction.
 
 ## Benchmarking with [reprobench](https://github.com/rkkautsar/reprobench)
 
