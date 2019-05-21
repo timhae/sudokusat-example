@@ -19,12 +19,10 @@ observers:
 tasks:
   sudoku:
     #fixme
-    type: local
+    type: file
     path: ./instances
     patterns: |
-      **/*.txt
-      !**/*.zip
-
+      *.txt
 
 # You can tune the limits
 
@@ -64,11 +62,11 @@ tools:
 ##                build:
 ##                    type: make
 ##                    path: TODO
-  # # Uncomment and modify to add more solvers
-  # alternative_implementation:
-  #   module: my_solver.AnotherImplementation # or other_solver.Solver, etc.
-  #   parameters:
-  #     riss:
-  #       solver: riss
-  #     glucose:
-  #       solver: glucose
+# # Uncomment and modify to add more solvers
+# alternative_implementation:
+#   module: my_solver.AnotherImplementation # or other_solver.Solver, etc.
+#   parameters:
+#     riss:
+#       solver: riss
+#     glucose:
+#       solver: glucose

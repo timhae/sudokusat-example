@@ -5,11 +5,13 @@ from pathlib import Path
 from reprobench.tools.executable import ExecutableTool
 from reprobench.utils import download_file
 
+from sudoku.tool import SudokuSatSolver
+
 
 DIR = os.path.dirname(__file__)
 
 
-class MySudokuSolver(ExecutableTool):
+class MySudokuSolver(SudokuSatSolver):
     name = "My Sudoku Solver"
 
     # TODO: change this to your solver executable
@@ -17,10 +19,10 @@ class MySudokuSolver(ExecutableTool):
 
     @classmethod
     def setup(cls):
+        super().setup()
         # # TODO: add setup as needed (compiling etc.)
         # # for example you can use subprocess to execute GNU Make:s
         # subprocess.run(["make"], cwd=DIR)
-        pass
 
     def get_cmdline(self):
         # TODO: change how your solver is executed against a task.
@@ -40,7 +42,9 @@ class MySudokuSolver(ExecutableTool):
         If it returns false, the `setup()` method is executed
         """
 
+        if not super().is_ready():
+            return False
+
         # TODO: maybe check if your solver has already been compiled
         #       by checking the target executable?
-
         return Path(cls.path).is_file()
