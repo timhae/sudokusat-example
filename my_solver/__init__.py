@@ -5,13 +5,11 @@ from pathlib import Path
 from reprobench.tools.executable import ExecutableTool
 from reprobench.utils import download_file
 
-from sudoku.tool import SudokuSatSolver
-
 
 DIR = os.path.dirname(__file__)
 
 
-class MySudokuSolver(SudokuSatSolver):
+class MySudokuSolver(ExecutableTool):
     name = "My Sudoku Solver"
 
     # TODO: change this to your solver executable
