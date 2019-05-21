@@ -5,11 +5,13 @@ from math import sqrt
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from playhouse.apsw_ext import BooleanField, DateTimeField, ForeignKeyField
 
 from reprobench.core.base import Step, Observer
-from reprobench.executors.db import BaseModel, Run
+from reprobench.core.db import db, Run, BaseModel
 from reprobench.utils import send_event
+from reprobench.statistics.tables.base import PandasExporter
 
 STORE_SUDOKU_VERDICT = b"sudokuverdict:store"
 
@@ -110,3 +112,15 @@ class SudokuValidator(Step):
 
         payload = dict(run=context["run"]["id"], is_valid=is_valid)
         send_event(context["socket"], STORE_SUDOKU_VERDICT, payload)
+
+
+class SudokuVerdictTable(PandasExporter):
+    @classmethod
+    def get_dataframe(cls, config):
+        query = (
+            SudokuVerdict.select().join(Run).select_extend(*Run._meta.fields.values())
+        )
+
+        sql, params = query.sql()
+
+        return pd.read_sql_query(sql, db, params=params)

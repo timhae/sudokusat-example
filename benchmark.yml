@@ -11,6 +11,9 @@ steps:
     - module: reprobench.statistics.tables.RunSummaryTable
       config:
         output: statistics/summary.csv
+    - module: sudoku.validate.SudokuVerdictTable
+      config:
+        output: statistics/verdict.csv
 
 observers:
   - module: reprobench.executors.RunStatisticObserver
@@ -18,11 +21,9 @@ observers:
 
 tasks:
   sudoku:
-    #fixme
     type: file
     path: ./instances
     patterns: |
-      #bsp-sudoku1.txt
       *.txt
 
 # You can tune the limits
@@ -40,6 +41,15 @@ tools:
     parameters:
       clasp:
         solver: clasp
+  # # Uncomment and modify to add more solvers
+  # alternative_implementation:
+  #   module: my_solver.AnotherImplementation # or other_solver.Solver, etc.
+  #   parameters:
+  #     riss:
+  #       solver: riss
+  #     glucose:
+  #       solver: glucose
+# ----
 #        path: ./env/share/bin/clasp
 #        download:
 #            binary:
@@ -63,11 +73,3 @@ tools:
 ##                build:
 ##                    type: make
 ##                    path: TODO
-# # Uncomment and modify to add more solvers
-# alternative_implementation:
-#   module: my_solver.AnotherImplementation # or other_solver.Solver, etc.
-#   parameters:
-#     riss:
-#       solver: riss
-#     glucose:
-#       solver: glucose
