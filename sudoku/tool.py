@@ -46,16 +46,16 @@ class SudokuSatSolver(ExecutableTool):
         download_file(url, destination)
         extract_zip(destination, cls.riss_dir)
 
-    @classmethod
-    def _setup_glucose(cls):
-        url = (
-            "http://www.labri.fr/perso/lsimon/downloads/softwares/glucose-syrup-4.1.tgz"
-        )
-        destination = cls.download_path / "glucose-4.1.tar.gz"
-        download_file(url, destination)
-        extract_tar(destination, cls.glucose_dir)
-        make_path = cls.glucose_dir / "simp"
-        subprocess.run(["make"], cwd=make_path, shell=True)
+    # @classmethod
+    # def _setup_glucose(cls):
+    #     url = (
+    #         "http://www.labri.fr/perso/lsimon/downloads/softwares/glucose-syrup-4.1.tgz"
+    #     )
+    #     destination = cls.download_path / "glucose-4.1.tar.gz"
+    #     download_file(url, destination)
+    #     extract_tar(destination, cls.glucose_dir)
+    #     make_path = cls.glucose_dir / "simp"
+    #     subprocess.run(["make"], cwd=make_path, shell=True)
 
     @classmethod
     def setup(cls):
@@ -65,7 +65,7 @@ class SudokuSatSolver(ExecutableTool):
         cls._setup_clasp(platform)
 
         if platform == "linux-x86_64":
-            cls._setup_glucose()
+            #cls._setup_glucose()
             cls._setup_riss()
 
     @classmethod

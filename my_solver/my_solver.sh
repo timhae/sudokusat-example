@@ -11,5 +11,13 @@ SATSOLVER=$1
 TASK=$2
 
 # Simulate work
-sleep 3
-echo "done!"
+sleep .1
+>&2 echo "running $0 $*"
+filename="$(basename $2)"
+echo $filename
+if [ $filename == "bsp-sudoku1.txt" ]; then
+    cat $(dirname $2)/$(basename -s .txt $2).sol
+fi
+
+
+>&2 echo "done!"

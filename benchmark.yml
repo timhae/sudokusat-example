@@ -22,6 +22,7 @@ tasks:
     type: file
     path: ./instances
     patterns: |
+      #bsp-sudoku1.txt
       *.txt
 
 # You can tune the limits
