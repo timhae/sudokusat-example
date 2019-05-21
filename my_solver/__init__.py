@@ -31,7 +31,7 @@ class MySudokuSolver(ExecutableTool):
         #   is either `riss` or `glucose`.
 
         # For example to run the solver as ./solver [sat_solver] [task]:
-        solver = self.parameters.pop("solver")
+        solver = self.parameters.get("solver")
         return [self.path, solver, self.task]
 
     @classmethod

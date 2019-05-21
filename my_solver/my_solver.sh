@@ -11,5 +11,5 @@ SATSOLVER=$1
 TASK=$2
 
 # Simulate work
-sleep 10
+sleep 3
 echo "done!"
