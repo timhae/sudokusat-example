@@ -59,6 +59,10 @@ This file will afterwards be checked by the [validator](sudoku/validate.py).
 Then open the resulting `output/statistics/summary.csv` file.
 Validation result is also available in `output/statistics/verdict.csv`.
 
+### Re-running the benchmark
+
+For now, you have to move or delete the existing `output/` folder to re-run the benchmark. We're working on making this a better experience.
+
 ---
 
 ## Appendix
