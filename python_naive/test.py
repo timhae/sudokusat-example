@@ -1,6 +1,6 @@
 #!/usr/env/bin python3
 
-from python_shared import shared
+from python_naive import solver
 import unittest
 
 class TestSharedMethods(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestSharedMethods(unittest.TestCase):
                       [0, 0, 0, 4, 0, 8, 0, 0, 7],
                       [0, 0, 3, 9, 0, 7, 0, 1, 0],
                       [0, 0, 0, 1, 2, 3, 4, 0, 0]]
-        self.assertEqual(shared.read_sudoku(readfile_path), test_array)
+        self.assertEqual(solver.read_sudoku(readfile_path), test_array)
 
     def test_read1(self):
         readfile_path = "./instances/table25-1.txt"
@@ -45,7 +45,7 @@ class TestSharedMethods(unittest.TestCase):
                       [0, 0, 0, 19, 4, 18, 22, 0, 8, 6, 25, 12, 23, 0, 7, 0, 0, 15, 10, 20, 0, 0, 0, 0, 0],
                       [18, 0, 0, 21, 0, 0, 0, 0, 23, 2, 0, 13, 10, 3, 14, 6, 11, 1, 0, 0, 0, 0, 0, 5, 0],
                       [5, 6, 7, 0, 0, 1, 11, 16, 0, 0, 2, 0, 0, 4, 0, 0, 3, 24, 21, 23, 0, 0, 0, 0, 0]]
-        self.assertEqual(shared.read_sudoku(readfile_path), test_array)
+        self.assertEqual(solver.read_sudoku(readfile_path), test_array)
 
 
 #    def test_read(self):

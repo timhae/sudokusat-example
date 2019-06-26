@@ -18,6 +18,6 @@ echo $filename
 if [ $filename == "bsp-sudoku1.txt" ]; then
     cat $(dirname $2)/$(basename -s .txt $2).sol
 fi
-
+pwd
 
 >&2 echo "done!"
