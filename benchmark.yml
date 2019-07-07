@@ -41,7 +41,7 @@ tools:
     parameters:
       clasp:
         solver: clasp
-  team3:
+  team2:
     module: python_naive.MySudokuSolver
     parameters:
       clasp:
