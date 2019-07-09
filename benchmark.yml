@@ -46,6 +46,11 @@ tools:
     parameters:
       clasp:
         solver: clasp
+  team3:
+    module: python_improved.MySudokuSolver
+    parameters:
+      clasp:
+        solver: clasp
   # # Uncomment and modify to add more solvers
   # alternative_implementation:
   #   module: my_solver.AnotherImplementation # or other_solver.Solver, etc.

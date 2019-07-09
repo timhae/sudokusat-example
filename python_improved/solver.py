@@ -15,17 +15,15 @@ class Solver:
         parser.add_argument('task', help='Filepath of the problem description to solve.')
         args = parser.parse_args()
 
+        # problem instance path
+        self.problem = '.'.join(args.task.split('.')[0:-1])
         # basename of the task file w/o ending, will be used for intermediate filenames
-        self.task = os.path.basename('.'.join(args.task.split('.')[0:-1]))
+        self.task = os.path.basename(self.problem)
         # the specified solver
         self.solver = args.solver
         # internal representation of the sudoku, 2d array containing tuples with the current entry and
         # a set with all possible values for that cell
-        self.sudoku = [[[]]]
-        # cnf file content
-        self.cnf = []
-        # task solution content
-        self.solution = []
+        self.sudoku = [[]]
         # short problem description that will be included in the solution
         self.problem_description = []
         # how many chars we need to print a number, depends on the size
@@ -36,8 +34,16 @@ class Solver:
         self.small_size = 0
         # large sudoku range list [0, .., 8] for n=3 sudoku (9 elements)
         self.rlb = []
+        # large sudoku range list shifted [1, .., 9] for n=3 sudoku (9 elements)
+        self.rlb_shifted = []
         # small sudoku range list [0, .., 2] for n=3 sudoku (3 elements)
         self.rls = []
+        # small sudoku range list shifted [1, .., 3] for n=3 sudoku (3 elements)
+        self.rls_shifted = []
+        # commander encoding var group size
+        self.cmdr_size = 5
+        # cnf variable counter
+        self.num_vars = 0
 
         self.solve()
 
@@ -48,8 +54,6 @@ class Solver:
         self.read_sudoku()
         self.improve_sudoku()
         self.create_cnf()
-        with open(self.task + '.cnf', 'w') as file_cnf:
-            file_cnf.write('\n'.join(self.cnf))
 
         # solve the cnf with the given solver and store result in a file
         with open(self.task + '.sol', 'w') as file_solved:
@@ -58,8 +62,6 @@ class Solver:
         # create the solution with the help of the solver output
         self.read_solver_output()
         self.create_solution()
-        with open(self.task + '_solution.txt', 'w') as file_solution:
-            file_solution.write('\n'.join(self.solution))
 
     def read_sudoku(self):
         """Parse input file and create two-dimensional array for internal representation as well as problem description.
@@ -68,7 +70,7 @@ class Solver:
         """
 
         # read file
-        with open(self.task + '.txt') as file_input:
+        with open(self.problem + '.txt') as file_input:
             entire_file = file_input.readlines()
 
         # get problem description in first 3 lines
@@ -77,15 +79,18 @@ class Solver:
         self.size = int(entire_file[3].split()[2].split('x')[0])
         self.small_size = int(math.sqrt(self.size))
         self.chars_per_number = len(str(self.size))
+        self.num_vars = int(''.join(['9' for _ in range(self.chars_per_number * 3)]))
 
         # select relevant lines (no divider lines)
         sudoku_lines = [line for (i, line) in enumerate(entire_file[4:]) if i % (self.small_size + 1) != 0]
 
         # create and fill array
         self.rlb = list(range(self.size))  # range list big
+        self.rlb_shifted = self.rlb[1:] + [self.size]  # shifted
         self.rls = list(range(self.small_size))  # range list small
+        self.rls_shifted = self.rls[1:] + [self.small_size]  # shifted
         self.sudoku = [[[
-            0, set(([temp for temp in (self.rlb[1:] + [self.size])]))]
+            0, set(([temp for temp in self.rlb_shifted]))]
             for _ in self.rlb]
             for _ in self.rlb]
         for (i, line) in enumerate(sudoku_lines):
@@ -107,52 +112,154 @@ class Solver:
             things_changed = 0
             for i in self.rlb:
                 for j in self.rlb:
-                    # naked singles
-                    if len(self.sudoku[i][j][1]) == 1:
-                        num = self.sudoku[i][j][1].pop()
-                        self.set_number_and_eliminate(num, i, j)
-                        things_changed += 1
+                    # only try to find naked or hidden singles if cell is not filled yet
+                    if self.sudoku[i][j][0] == 0:
+                        # naked singles
+                        if len(self.sudoku[i][j][1]) == 1:
+                            self.set_number_and_eliminate(self.sudoku[i][j][1].pop(), i, j)
+                            things_changed += 1
+                            continue
 
-                    # hidden singles
-                    # lines
-                    set_others = set(())
-                    for k in self.rlb:
-                        if k != j:
-                            set_others = set_others.union(self.sudoku[i][k][1])
-                    diff = self.sudoku[i][j][1].difference(set_others)
-                    if len(diff) == 1:
-                        self.set_number_and_eliminate(diff.pop(), i, j)
-                        things_changed += 1
-                    # columns
-                    set_others = set(())
-                    for k in self.rlb:
-                        if k != j:
-                            set_others = set_others.union(self.sudoku[k][j][1])
-                    diff = self.sudoku[i][j][1].difference(set_others)
-                    if len(diff) == 1:
-                        self.set_number_and_eliminate(diff.pop(), i, j)
-                        things_changed += 1
-                    # blocks
-                    #set_others = set(())
-                    #line_offset = (i // self.small_size) * self.small_size
-                    #column_offset = (j // self.small_size) * self.small_size
-                    #for k in self.rls:
-                    #    for l in self.rls:
-                    #        if k != i and l != j:
-                    #            set_others = set_others.union(self.sudoku[line_offset + k][column_offset + l][1])
-                    #diff = self.sudoku[i][j][1].difference(set_others)
-                    #if len(diff) == 1:
-                    #    self.set_number_and_eliminate(diff.pop(), i, j)
-                    #    things_changed += 1
+                        # hidden singles
+
+                        # lines and columns
+                        set_others_lines = set(())
+                        set_others_cols = set(())
+                        for k in self.rlb:
+                            if k != j:
+                                set_others_lines = set_others_lines.union(self.sudoku[i][k][1])
+                                set_others_cols = set_others_cols.union(self.sudoku[k][j][1])
+                        diff_lines = self.sudoku[i][j][1].difference(set_others_lines)
+                        if len(diff_lines) == 1:
+                            self.set_number_and_eliminate(diff_lines.pop(), i, j)
+                            things_changed += 1
+                            continue
+                        diff_cols = self.sudoku[i][j][1].difference(set_others_cols)
+                        if len(diff_cols) == 1:
+                            self.set_number_and_eliminate(diff_cols.pop(), i, j)
+                            things_changed += 1
+                            continue
+                        # blocks
+                        set_others = set(())
+                        line_offset = (i // self.small_size) * self.small_size
+                        column_offset = (j // self.small_size) * self.small_size
+                        for k in self.rls:
+                            for m in self.rls:
+                                if k != i or m != j:
+                                    set_others = set_others.union(self.sudoku[line_offset + k][column_offset + m][1])
+                        diff = self.sudoku[i][j][1].difference(set_others)
+                        if len(diff) == 1:
+                            self.set_number_and_eliminate(diff.pop(), i, j)
+                            things_changed += 1
+                            continue
+
+                    # TODO:intersection removal, do we actually want to do this? might slow down overall performance
 
     def create_cnf(self):
         """Create cnf from internal sudoku representation.
 
         ENCODING DEPENDENT
         """
-        # TODO: create cnf with the help of self.sudoku
-        self.cnf = ['p cnf 2 2', '1 2 0', '-1 -2 0']
-        print(self.sudoku[2][8][1])
+
+        clauses = []  # List to maintain all the clauses
+
+        def vals_to_clause(n1, n2, n3):
+            """Prepend resulting clause string with 0 if necessary."""
+            string = str(n1) + str(n2) + str(n3)  # TODO: fix encoding for n>9
+            #string = str(n1).zfill(self.chars_per_number)\
+            #    + str(n2).zfill(self.chars_per_number)\
+            #    + str(n3).zfill(self.chars_per_number)
+            return string
+
+        # cell definedness
+        for rows in self.rlb_shifted:
+            for cols in self.rlb_shifted:
+                clause = ''
+                for value in self.rlb_shifted:
+                    clause += vals_to_clause(rows, cols, value) + ' '
+                clause += str(0)
+                clauses.append(clause)
+
+        # row uniqueness
+        for rows in self.rlb_shifted:
+            for value in self.rlb_shifted:
+                for x in range(1, self.size):
+                    for y in range(x + 1, self.size + 1):
+                        clauses.append('-' + vals_to_clause(rows, x, value) +
+                                       ' -' + vals_to_clause(rows, y, value) + ' 0')
+
+        # column uniqueness
+        for cols in self.rlb_shifted:
+            for value in self.rlb_shifted:
+                for x in range(1, self.size):
+                    for y in range(x + 1, self.size + 1):
+                        clauses.append('-' + vals_to_clause(x, cols, value) +
+                                       ' -' + vals_to_clause(y, cols, value) + ' 0')
+
+        # block uniqueness
+        for value in self.rlb_shifted:
+            for x in self.rls:
+                for y in self.rls:
+                    for row in range(3 * x + 1, 3 * x + 4):
+                        for col in range(3 * y + 1, 3 * y + 4):
+                            for i in range(3 * x + 1, 3 * x + 4):
+                                for j in range(3 * y + 1, 3 * y + 4):
+                                    if i == row and j == col:
+                                        continue
+                                    clauses.append('-' + vals_to_clause(row, col, value) +
+                                                   ' -' + vals_to_clause(i, j, value) + ' 0')
+
+        for i in self.rlb:
+            for j in self.rlb:
+                num = self.sudoku[i][j][0]
+                if num > 0:
+                    clauses.append(vals_to_clause(i+1, j+1, num) + ' 0')
+
+        with open(self.task + '.cnf', 'w') as file_cnf:
+            file_cnf.write('p cnf ' + str(self.num_vars) + ' ' + str(len(clauses)) + '\n')
+            file_cnf.write('\n'.join(clauses))
+
+    def cmdr_one(self, vars):
+        """Commander algorithm 'exactly one'."""
+
+        # group vars according to commander size
+        vars = self.group_vars(vars, self.cmdr_size)
+        # print(vars)
+        # phi = set(())
+        clause_vars = [[]]
+        for i in range(len(vars)):
+            if len(vars[i]) == 1:  # propositional variable
+                clause_vars.append(str(vars[i][0]))
+            else:
+                self.num_vars += 1
+                new_var = self.num_vars
+                # print(new_var, 'cmdr var for ', vars[i])  # is list
+
+                clause_vars.append('-' + str(new_var))
+
+        phi = self.naive_one(clause_vars)
+        return phi
+
+    @staticmethod
+    def group_vars(vars, size):
+        return Solver.group_vars([vars[i:i + size] for i in range(0, len(vars), size)], size)
+
+    @staticmethod
+    def naive_one(vars):
+        """Naive encoding of 'exactly one' condition."""
+
+        # at least one
+        x = set(())
+        n = len(vars)
+        for el in vars:
+            x.add(str(el))
+
+        # at most one
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                x.add('-' + str(vars[i]) + ' -' + str(vars[j]))
+
+        return x
 
     def read_solver_output(self):
         """Read solver output and create solved sudoku representation.
@@ -168,7 +275,7 @@ class Solver:
         for line in solution:
             if line[0] == 'v':
                 for elem in line.split()[1:]:
-                    if elem > '110':
+                    if int(elem) > 110:
                         relevant.append(elem)
 
         # fill solution sudoku
@@ -182,19 +289,24 @@ class Solver:
         """
 
         # task information
-        self.solution.append('\n'.join(self.problem_description))
+        sol = ['\n'.join(self.problem_description)]
         # fill solution string
         delimiter_row = self.small_size * ('+-' + ('-' * (self.small_size * (self.chars_per_number + 1)))) + '+'
-        self.solution.append(delimiter_row)
+        sol.append(delimiter_row)
         for line_number, line in enumerate(self.sudoku):
             linestring = '| '
             for column_number, column in enumerate(line):
                 linestring += str(column[0]).rjust(self.chars_per_number) + ' '
                 if column_number % self.small_size == (self.small_size - 1):
                     linestring += '| '
-            self.solution.append(linestring)
+            sol.append(linestring)
             if line_number % self.small_size == (self.small_size - 1):
-                self.solution.append(delimiter_row)
+                sol.append(delimiter_row)
+
+        with open(self.task + '_solution.txt', 'w') as file_solution:
+            file_solution.write('\n'.join(sol))
+
+        print('\n'.join(sol))
 
     def set_number_and_eliminate(self, num, i, j):
         """Set the number at the given coordinates to the given number and eliminate possibilities."""
@@ -214,4 +326,5 @@ class Solver:
 
 
 if __name__ == '__main__':
-    Solver()
+    # for interactive debugging
+    s = Solver()
