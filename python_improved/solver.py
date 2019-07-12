@@ -79,7 +79,7 @@ class Solver:
         self.size = int(entire_file[3].split()[2].split('x')[0])
         self.small_size = int(math.sqrt(self.size))
         self.chars_per_number = len(str(self.size))
-        self.num_vars = int(''.join(['9' for _ in range(self.chars_per_number * 3)]))
+        self.num_vars = int(''.join([str(self.size) for _ in range(3)]))
 
         # select relevant lines (no divider lines)
         sudoku_lines = [line for (i, line) in enumerate(entire_file[4:]) if i % (self.small_size + 1) != 0]
@@ -165,10 +165,10 @@ class Solver:
 
         def vals_to_clause(n1, n2, n3):
             """Prepend resulting clause string with 0 if necessary."""
-            string = str(n1) + str(n2) + str(n3)  # TODO: fix encoding for n>9
-            #string = str(n1).zfill(self.chars_per_number)\
-            #    + str(n2).zfill(self.chars_per_number)\
-            #    + str(n3).zfill(self.chars_per_number)
+            # TODO: fix encoding for n>9
+            string = str(n1)\
+                + str(n2).zfill(self.chars_per_number)\
+                + str(n3).zfill(self.chars_per_number)
             return string
 
         # cell definedness
@@ -209,6 +209,7 @@ class Solver:
                                     clauses.append('-' + vals_to_clause(row, col, value) +
                                                    ' -' + vals_to_clause(i, j, value) + ' 0')
 
+        # present entries
         for i in self.rlb:
             for j in self.rlb:
                 num = self.sudoku[i][j][0]
@@ -222,6 +223,7 @@ class Solver:
     def cmdr_one(self, vars):
         """Commander algorithm 'exactly one'."""
 
+        # TODO: add recursion
         # group vars according to commander size
         vars = self.group_vars(vars, self.cmdr_size)
         # print(vars)
@@ -242,7 +244,8 @@ class Solver:
 
     @staticmethod
     def group_vars(vars, size):
-        return Solver.group_vars([vars[i:i + size] for i in range(0, len(vars), size)], size)
+        return(Solver.group_vars([vars[i:i + size] for i in range(0, len(vars), size)], size)
+               if len(vars) > size else vars)
 
     @staticmethod
     def naive_one(vars):
@@ -314,15 +317,15 @@ class Solver:
         self.sudoku[i][j][0] = num
         # no other possibilities where we set a number
         self.sudoku[i][j][1].clear()
-        # eliminate possibilites in columns, lines and blocks
+        # eliminate possibilities in columns, lines and blocks
         for k in self.rlb:
-            self.sudoku[k][j][1].discard(num)  # columns
-            self.sudoku[i][k][1].discard(num)  # lines
+            self.sudoku[k][j][1].discard(num)  # column
+            self.sudoku[i][k][1].discard(num)  # line
         line_offset = (i // self.small_size) * self.small_size
         column_offset = (j // self.small_size) * self.small_size
         for l in self.rls:
             for m in self.rls:
-                self.sudoku[line_offset + l][column_offset + m][1].discard(num)  # blocks
+                self.sudoku[line_offset + l][column_offset + m][1].discard(num)  # block
 
 
 if __name__ == '__main__':
