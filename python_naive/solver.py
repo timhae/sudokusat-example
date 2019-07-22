@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import signal
 import math
 import subprocess
 import argparse
@@ -10,6 +11,11 @@ class Solver:
     def __init__(self):
         """Create all internal variables, they will be set up later."""
 
+        # setup interrupt handling
+        signal.signal(signal.SIGTERM, self.handler)
+        signal.signal(signal.SIGINT, self.handler)
+
+        # parse arguments
         parser = argparse.ArgumentParser(description='Create constraint files for sudoku solvers.')
         parser.add_argument('solver', help='The solver to use.')
         parser.add_argument('task', help='Filepath of the problem description to solve.')
@@ -44,8 +50,13 @@ class Solver:
         self.cmdr_size = 5
         # cnf variable counter
         self.num_vars = 0
+        # the clasp process
+        self.process = None
 
         self.solve()
+
+    def handler(self, _num, _frame):
+        self.process.terminate()
 
     def solve(self):
         """Solve the given task."""
@@ -56,7 +67,8 @@ class Solver:
 
         # solve the cnf with the given solver and store result in a file
         with open(self.task + '.sol', 'w') as file_solved:
-            subprocess.run([self.solver, self.task + '.cnf'], stdout=file_solved)
+            self.process = subprocess.Popen([self.solver, self.task + '.cnf'], stdout=file_solved)
+        self.process.wait()
 
         # create the solution with the help of the solver output
         self.read_solver_output()
