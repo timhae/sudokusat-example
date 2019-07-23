@@ -34,20 +34,10 @@ limits:
 
 # You will probably want to change the solver configuration below
 tools:
-  team1:
+  team:
     # The module refers to the class MySolver in `my_solver/__init__.py`.
     # Change accordingly if the directory is renamed.
-    module: my_solver.MySudokuSolver
-    parameters:
-      clasp:
-        solver: clasp
-  team2:
     module: python_naive.MySudokuSolver
-    parameters:
-      clasp:
-        solver: clasp
-  team3:
-    module: python_improved.MySudokuSolver
     parameters:
       clasp:
         solver: clasp
