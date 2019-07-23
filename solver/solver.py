@@ -57,13 +57,14 @@ class Solver:
 
     def handler(self, _num, _frame):
         if self.process is not None:
-            self.process.terminate()
+            self.process.kill()
 
     def solve(self):
         """Solve the given task."""
 
         # create the cnf out of the input
         self.read_sudoku()
+        self.improve_sudoku()
         self.create_cnf()
 
         # solve the cnf with the given solver and store result in a file
@@ -113,6 +114,59 @@ class Solver:
                     self.sudoku[i][j][0] = 0
                 else:
                     self.set_number_and_eliminate(int(number), i, j)
+
+    def improve_sudoku(self):
+        """Eliminate naked singles, hidden singles and do intersection removal to improve the sudoku until nothing
+        changes anymore.
+        """
+
+        things_changed = 1
+        while things_changed > 0:
+            things_changed = 0
+            for i in self.rlb:
+                for j in self.rlb:
+                    # only try to find naked or hidden singles if cell is not filled yet
+                    if self.sudoku[i][j][0] == 0:
+                        # naked singles
+                        if len(self.sudoku[i][j][1]) == 1:
+                            self.set_number_and_eliminate(self.sudoku[i][j][1].pop(), i, j)
+                            things_changed += 1
+                            continue
+
+                        # hidden singles
+
+                        # lines and columns
+                        set_others_lines = set(())
+                        set_others_cols = set(())
+                        for k in self.rlb:
+                            if k != j:
+                                set_others_lines = set_others_lines.union(self.sudoku[i][k][1])
+                                set_others_cols = set_others_cols.union(self.sudoku[k][j][1])
+                        diff_lines = self.sudoku[i][j][1].difference(set_others_lines)
+                        if len(diff_lines) == 1:
+                            self.set_number_and_eliminate(diff_lines.pop(), i, j)
+                            things_changed += 1
+                            continue
+                        diff_cols = self.sudoku[i][j][1].difference(set_others_cols)
+                        if len(diff_cols) == 1:
+                            self.set_number_and_eliminate(diff_cols.pop(), i, j)
+                            things_changed += 1
+                            continue
+                        # blocks
+                        set_others = set(())
+                        line_offset = (i // self.small_size) * self.small_size
+                        column_offset = (j // self.small_size) * self.small_size
+                        for k in self.rls:
+                            for m in self.rls:
+                                if k != i or m != j:
+                                    set_others = set_others.union(self.sudoku[line_offset + k][column_offset + m][1])
+                        diff = self.sudoku[i][j][1].difference(set_others)
+                        if len(diff) == 1:
+                            self.set_number_and_eliminate(diff.pop(), i, j)
+                            things_changed += 1
+                            continue
+
+                    # TODO:intersection removal, do we actually want to do this? might slow down overall performance
 
     def create_cnf(self):
         """Create cnf from internal sudoku representation.
@@ -178,6 +232,50 @@ class Solver:
         with open(self.task + '.cnf', 'w') as file_cnf:
             file_cnf.write('p cnf ' + str(self.num_vars) + ' ' + str(len(clauses)) + '\n')
             file_cnf.write('\n'.join(clauses))
+
+    def cmdr_one(self, vars):
+        """Commander algorithm 'exactly one'."""
+
+        # TODO: add recursion
+        # group vars according to commander size
+        vars = self.group_vars(vars, self.cmdr_size)
+        # print(vars)
+        # phi = set(())
+        clause_vars = [[]]
+        for i in range(len(vars)):
+            if len(vars[i]) == 1:  # propositional variable
+                clause_vars.append(str(vars[i][0]))
+            else:
+                self.num_vars += 1
+                new_var = self.num_vars
+                # print(new_var, 'cmdr var for ', vars[i])  # is list
+
+                clause_vars.append('-' + str(new_var))
+
+        phi = self.naive_one(clause_vars)
+        return phi
+
+    @staticmethod
+    def group_vars(vars, size):
+        return(Solver.group_vars([vars[i:i + size] for i in range(0, len(vars), size)], size)
+               if len(vars) > size else vars)
+
+    @staticmethod
+    def naive_one(vars):
+        """Naive encoding of 'exactly one' condition."""
+
+        # at least one
+        x = set(())
+        n = len(vars)
+        for el in vars:
+            x.add(str(el))
+
+        # at most one
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                x.add('-' + str(vars[i]) + ' -' + str(vars[j]))
+
+        return x
 
     def read_solver_output(self):
         """Read solver output and create solved sudoku representation.
