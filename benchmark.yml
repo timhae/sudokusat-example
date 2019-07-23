@@ -37,7 +37,7 @@ tools:
   team:
     # The module refers to the class MySolver in `my_solver/__init__.py`.
     # Change accordingly if the directory is renamed.
-    module: python_naive.MySudokuSolver
+    module: solver.MySudokuSolver
     parameters:
       clasp:
         solver: clasp
